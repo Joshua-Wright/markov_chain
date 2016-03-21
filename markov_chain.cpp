@@ -17,20 +17,20 @@ namespace std {
 }
 
 
-markov_chain::markov_chain(std::string path) {
-
+void markov_chain::parse_book(std::string path) {
   std::unordered_map<std::pair<size_t, size_t>, size_t> counter_map;
-
 
   std::ifstream input_file(path);
   std::string word, prev_word;
 
   /*need to process two words at a time, so process the first word specially*/
-  size_t max_idx = 0;
+  size_t max_idx = words.size();
   input_file >> prev_word;
-  words_to_indexes[prev_word] = max_idx;
-  indexed_words.push_back(prev_word);
-  ++max_idx;
+  if (words_to_indexes.find(prev_word) == words_to_indexes.end()) {
+    words_to_indexes[prev_word] = max_idx;
+    words.push_back(prev_word);
+    ++max_idx;
+  }
 
   while (input_file >> word) {
     if (!isalpha(word.front())) {
@@ -38,7 +38,7 @@ markov_chain::markov_chain(std::string path) {
     }
     if (words_to_indexes.find(word) == words_to_indexes.end()) {
       words_to_indexes[word] = max_idx;
-      indexed_words.push_back(word);
+      words.push_back(word);
       ++max_idx;
     }
     auto current_pair = std::make_pair(words_to_indexes[prev_word],
@@ -52,18 +52,25 @@ markov_chain::markov_chain(std::string path) {
 
   /*assign all the default values*/
   /*pre-allocate memory*/
-  edges = std::vector<std::unordered_map<size_t, size_t>>(max_idx);
+//  edges = std::vector<std::unordered_map<size_t, size_t>>(max_idx);
+  edges = std::vector<std::vector<std::pair<size_t, size_t>>>(max_idx);
   for (auto &p : counter_map) {
-    edges[p.first.first][p.first.second] = p.second;
+//    edges[p.first.first][p.first.second] = p.second;
+    edges[p.first.first].push_back(std::make_pair(p.first.second, p.second));
 //    edges[p.first.first][p.first.second] = p.second * p.second;
   }
-  for (auto &map : edges) {
-    map.rehash(map.size() + 1);
+  for (auto &node : edges) {
+//    node.rehash(node.size() + 1);
+    node.shrink_to_fit();
   }
+
 }
 
+markov_chain::markov_chain() { }
+
+//size_t markov_chain::pick_next(const std::unordered_map<size_t, size_t> &node_edges) {
 size_t markov_chain::pick_next(
-    const std::unordered_map<size_t, size_t> &node_edges) {
+    const std::vector<std::pair<size_t, size_t>> &node_edges) {
   size_t total = 0;
   /*get the total*/
   for (auto &p : node_edges) {
@@ -92,7 +99,7 @@ std::string markov_chain::get_words(size_t n_words) {
   size_t current = rand() % edges.size();
   for (size_t i = 0; i < n_words; i++) {
     /*append the current word and a space*/
-    output << indexed_words[current] << " ";
+    output << words[current] << " ";
 
     if (edges[current].size() == 0) {
       /*we're out of places to go*/
@@ -103,4 +110,56 @@ std::string markov_chain::get_words(size_t n_words) {
     current = pick_next(edges[current]);
   }
   return output.str();
+}
+
+void markov_chain::write_to(std::string path) {
+  std::ofstream output_file(path);
+
+  for (int i = 0; i < words.size(); i++) {
+    /*each line starts wtih the word*/
+    output_file << words[i];
+
+    /*followed by the list of edges and counts*/
+    for (auto &edge : edges[i]) {
+      /*write the space first so that the trailing newline immediately follows
+       * the final number*/
+      output_file << " " << edge.first << " " << edge.second;
+    }
+    /*separate nodes using newline*/
+    output_file << std::endl;
+  }
+}
+
+void markov_chain::read_from(std::string path) {
+  /*clear all the previous stuff*/
+  edges.clear();
+  words.clear();
+  words_to_indexes.clear();
+
+  std::ifstream input(path);
+  size_t max_index = 0;
+  while (true) { /*while not end of file*/
+    /*input the word*/
+    std::string word;
+    input >> word;
+    if (word == "") {
+      break;
+    }
+    words.push_back(word);
+    words_to_indexes[word] = max_index;
+    ++max_index;
+
+    /*input the word's edges*/
+    edges.emplace_back(); /*add a new empty vector*/
+    while (input.peek() != '\n') {
+      size_t index;
+      input >> index;
+      size_t count;
+      input >> count;
+      /*1 * index to make IDE not complain*/
+      edges.back().emplace_back(1 * index, count);
+    }
+    /*ignore the trailing newline*/
+    input.ignore();
+  }
 }

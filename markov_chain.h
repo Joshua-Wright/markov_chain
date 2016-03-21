@@ -15,17 +15,23 @@
 class markov_chain {
 
   std::unordered_map<std::string, size_t> words_to_indexes;
-  std::vector<std::string> indexed_words;
+  std::vector<std::string> words;
 
   /*the map maps node indexes to counts*/
-  std::vector<std::unordered_map<size_t, size_t>> edges;
+  std::vector<std::vector<std::pair<size_t, size_t>>> edges;
 
-  static size_t pick_next(const std::unordered_map<size_t, size_t>&node_edges);
+  static size_t pick_next(const std::vector<std::pair<size_t, size_t>> &node_edges);
 
 public:
-  markov_chain(std::string path);
+  markov_chain();
+
+  void parse_book(std::string path);
 
   std::string get_words(size_t n_words);
+
+  void write_to(std::string path);
+
+  void read_from(std::string path);
 
 };
 

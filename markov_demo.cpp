@@ -6,10 +6,15 @@
 
 int main(int argc, char const *argv[]) {
   std::srand(std::time(nullptr));
-  std::string input("/home/j0sh/Dropbox/code/Cpp/markov/KingJamesBible.txt");
-//  std::string input("/home/j0sh/Dropbox/code/Cpp/markov/TomSawyer.txt");
-//  std::string input("/home/j0sh/Dropbox/code/Cpp/markov/Shakespeare.txt");
-  markov_chain chain(input);
+  markov_chain chain;
+//  chain.parse_book("../TomSawyer.txt");
+  chain.parse_book("../gop_debate_all.txt");
   std::cout << chain.get_words(300) << std::endl;
+  chain.write_to("test.txt");
+
+//  markov_chain chain2;
+//  chain2.read_from("test.txt");
+//  std::cout << chain2.get_words(20) << std::endl;
+
   return 0;
 }
