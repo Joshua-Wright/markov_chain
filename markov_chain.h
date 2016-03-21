@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
+#include <random>
 #include <vector>
 
 class markov_chain {
@@ -20,18 +21,20 @@ class markov_chain {
   /*the map maps node indexes to counts*/
   std::vector<std::vector<std::pair<size_t, size_t>>> edges;
 
-  static size_t pick_next(const std::vector<std::pair<size_t, size_t>> &node_edges);
+  size_t pick_next(const std::vector<std::pair<size_t, size_t>> &node_edges);
+
+  std::mt19937_64 prng;
 
 public:
   markov_chain();
 
-  void parse_book(std::string path);
+  void parse_book(const std::string &path);
 
-  std::string get_words(size_t n_words);
+  std::string get_words(const size_t n_words, const std::string &starting_word = "");
 
-  void write_to(std::string path);
+  void write_to(const std::string &path);
 
-  void read_from(std::string path);
+  void read_from(const std::string &path);
 
 };
 

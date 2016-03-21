@@ -3,7 +3,7 @@
 //
 #include <fstream>
 #include <sstream>
-#include <random>
+//#include <random>
 #include "markov_chain.h"
 
 namespace std {
@@ -17,7 +17,7 @@ namespace std {
 }
 
 
-void markov_chain::parse_book(std::string path) {
+void markov_chain::parse_book(const std::string &path) {
   std::unordered_map<std::pair<size_t, size_t>, size_t> counter_map;
 
   std::ifstream input_file(path);
@@ -33,9 +33,6 @@ void markov_chain::parse_book(std::string path) {
   }
 
   while (input_file >> word) {
-    if (!isalpha(word.front())) {
-      continue;
-    }
     if (words_to_indexes.find(word) == words_to_indexes.end()) {
       words_to_indexes[word] = max_idx;
       words.push_back(word);
@@ -66,9 +63,10 @@ void markov_chain::parse_book(std::string path) {
 
 }
 
-markov_chain::markov_chain() { }
+markov_chain::markov_chain() {
+  prng.seed((unsigned long) time(nullptr));
+}
 
-//size_t markov_chain::pick_next(const std::unordered_map<size_t, size_t> &node_edges) {
 size_t markov_chain::pick_next(
     const std::vector<std::pair<size_t, size_t>> &node_edges) {
   size_t total = 0;
@@ -76,13 +74,13 @@ size_t markov_chain::pick_next(
   for (auto &p : node_edges) {
     total += p.second;
   }
-  /*for informational purposes*/
-  size_t random_number = (size_t) std::rand() % total;
+  auto gen = std::uniform_int_distribution<size_t>(0, total - 1);
+  size_t random_number = gen(prng);
   /*incrementally find where this random value lies in the probability*/
   for (auto &p : node_edges) {
     if (random_number < p.second) {
       /*if less than, it lies within this range*/
-      std::cout << 1.0 * p.second / total << std::endl;
+//      std::cout << 1.0 * p.second / total << std::endl;
       return p.first;
     } else {
       /*if greater than, it lies beyond this range*/
@@ -93,10 +91,18 @@ size_t markov_chain::pick_next(
   throw std::runtime_error("something happened, invalid node?");
 }
 
-std::string markov_chain::get_words(size_t n_words) {
+std::string markov_chain::get_words(const size_t n_words,
+                                    const std::string &starting_word) {
   std::stringstream output;
   /*randomly select the first word*/
-  size_t current = rand() % edges.size();
+  size_t current;
+  if (starting_word.empty()) {
+    auto gen = std::uniform_int_distribution<size_t>(0,
+                                                     words_to_indexes.size());
+    current = gen(prng);
+  } else {
+    current = words_to_indexes[starting_word];
+  }
   for (size_t i = 0; i < n_words; i++) {
     /*append the current word and a space*/
     output << words[current] << " ";
@@ -112,7 +118,7 @@ std::string markov_chain::get_words(size_t n_words) {
   return output.str();
 }
 
-void markov_chain::write_to(std::string path) {
+void markov_chain::write_to(const std::string &path) {
   std::ofstream output_file(path);
 
   for (int i = 0; i < words.size(); i++) {
@@ -130,7 +136,7 @@ void markov_chain::write_to(std::string path) {
   }
 }
 
-void markov_chain::read_from(std::string path) {
+void markov_chain::read_from(const std::string &path) {
   /*clear all the previous stuff*/
   edges.clear();
   words.clear();
@@ -142,7 +148,7 @@ void markov_chain::read_from(std::string path) {
     /*input the word*/
     std::string word;
     input >> word;
-    if (word == "") {
+    if (word.empty()) {
       break;
     }
     words.push_back(word);

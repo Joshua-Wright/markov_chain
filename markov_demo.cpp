@@ -5,12 +5,13 @@
 #include <ctime>
 
 int main(int argc, char const *argv[]) {
-  std::srand(std::time(nullptr));
   markov_chain chain;
 //  chain.parse_book("../TomSawyer.txt");
-  chain.parse_book("../gop_debate_all.txt");
+//  chain.parse_book("../gop_debate_all.txt");
+  chain.parse_book("../trump.txt");
+//  chain.write_to("test.txt");
   std::cout << chain.get_words(300) << std::endl;
-  chain.write_to("test.txt");
+//  std::cout << chain.get_words(300, "TRUMP:") << std::endl;
 
 //  markov_chain chain2;
 //  chain2.read_from("test.txt");
