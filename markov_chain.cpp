@@ -49,18 +49,14 @@ void markov_chain::parse_book(const std::string &path) {
 
   /*assign all the default values*/
   /*pre-allocate memory*/
-//  edges = std::vector<std::unordered_map<size_t, size_t>>(max_idx);
   edges = std::vector<std::vector<std::pair<size_t, size_t>>>(max_idx);
   for (auto &p : counter_map) {
-//    edges[p.first.first][p.first.second] = p.second;
     edges[p.first.first].push_back(std::make_pair(p.first.second, p.second));
-//    edges[p.first.first][p.first.second] = p.second * p.second;
   }
   for (auto &node : edges) {
-//    node.rehash(node.size() + 1);
     node.shrink_to_fit();
   }
-
+  build_sentence_starters();
 }
 
 markov_chain::markov_chain() {
@@ -168,4 +164,42 @@ void markov_chain::read_from(const std::string &path) {
     /*ignore the trailing newline*/
     input.ignore();
   }
+  build_sentence_starters();
+}
+
+void markov_chain::build_sentence_starters() {
+  for (size_t i = 0; i < words.size(); i++) {
+    if (std::isalpha(words[i].front()) && std::isupper(words[i].front())) {
+      sentence_starters.push_back(i);
+    }
+  }
+}
+
+std::string markov_chain::get_sentence(const std::string &starting_word,
+                                       const std::string &sentence_enders) {
+  /*decide where to start*/
+  size_t index = 0;
+  if (starting_word.empty()) {
+    std::uniform_int_distribution<size_t> gen(0, sentence_starters.size() - 1);
+    index = sentence_starters[gen(prng)];
+  } else {
+    index = words_to_indexes[starting_word];
+  }
+  std::stringstream output;
+  while (true) {
+
+    /*write the word*/
+    output << words[index] << " ";
+
+    if (edges[index].empty()) {
+      /*if we have nowhere to go, stop going places*/
+      break;
+    } else if (sentence_enders.find(words[index].back()) != std::string::npos) {
+      /*if this can end a sentence, let it*/
+      break;
+    }
+    /*find the next node*/
+    index = pick_next(edges[index]);
+  }
+  return output.str();
 }

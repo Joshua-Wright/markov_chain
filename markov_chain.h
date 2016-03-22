@@ -17,6 +17,7 @@ class markov_chain {
 
   std::unordered_map<std::string, size_t> words_to_indexes;
   std::vector<std::string> words;
+  std::vector<size_t> sentence_starters;
 
   /*the map maps node indexes to counts*/
   std::vector<std::vector<std::pair<size_t, size_t>>> edges;
@@ -25,12 +26,18 @@ class markov_chain {
 
   std::mt19937_64 prng;
 
+  void build_sentence_starters();
+
 public:
   markov_chain();
 
   void parse_book(const std::string &path);
 
-  std::string get_words(const size_t n_words, const std::string &starting_word = "");
+  std::string get_words(const size_t n_words,
+                        const std::string &starting_word = "");
+
+  std::string get_sentence(const std::string &starting_word = "",
+                           const std::string &sentence_enders = ".?!");
 
   void write_to(const std::string &path);
 
